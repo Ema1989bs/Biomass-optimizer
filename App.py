@@ -40,8 +40,9 @@ with col_econ2:
 t_out = 55 if "Condensazione" in modalita else 130
 cost_multiplier = 1.30 if "Condensazione" in modalita else 1.00
 p_termica_kw = (portata_kgh * 1.05 * (t_in - t_out)) / 3600
-# Calcolo PBT standard (Conto Termico 3.0)
-pbt = (capex * 0.35) / risparmio_annuo if risparmio_annuo > 0 else 0
+# Calcolo TEE per box alternativo (solo logica)
+guadagno_tee_fittizio = ((p_termica_kw * ore_anno / 1000) / 11.63) * 0.8 * 250
+pbt_tee = (capex * 0.35) / (risparmio_annuo + guadagno_tee_fittizio) if (risparmio_annuo + guadagno_tee_fittizio) > 0 else 0
 
 # Calcolo PBT alternativo solo per Cogenerazione (Certificati Bianchi)
 # 1 TEP = 11.63 MWh. Assumiamo coefficiente 0.8 e valore 250€/TEE
@@ -100,8 +101,11 @@ st.markdown(f"""
 # Visualizzazione secondo box solo se in assetto Cogenerazione
 if opzione == "Cogenerazione":
     st.markdown(f"""
-        <div style="background-color: #007bff; padding: 20px; border-radius: 15px; text-align: center; border: 3px solid white; margin-top: 10px;">
-            <h3 style="color: white; margin: 0;">🥈 PBT Alternativo: {pbt_tee:.1f} anni</h3>
-            <p style="color: white; opacity: 0.9; margin: 0;">Calcolato con incentivo Certificati Bianchi (TEE)</p>
+    # Visualizzazione PBT alternativo solo in assetto Cogenerazione
+if opzione == "Cogenerazione":
+    st.markdown(f"""
+        <div style="background-color: #007bff; padding: 20px; border-radius: 15px; text-align: center; border: 3px solid white; margin-top: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.1);">
+            <h3 style="color: white; margin: 0; font-size: 1.5em;">🥈 PBT Alternativo: {pbt_tee:.1f} anni</h3>
+            <p style="color: white; opacity: 0.9; margin: 0;">Incentivo Certificati Bianchi (TEE) stimato</p>
         </div>
     """, unsafe_allow_html=True)

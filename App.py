@@ -2,25 +2,34 @@ import streamlit as st
 import psychrolib
 import numpy as np
 
+# Configurazione Iniziale
 psychrolib.SetUnitSystem(psychrolib.SI)
-st.set_page_config(page_title="ELECTRA ENERGY RECOVERY HEAT", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="GENERICO CALCOLATORE RECUPERO ENERGIA DAI FUMI A CAMINO", page_icon="🔥", layout="wide")
 
-# Database Costi
+# Database CAPEX
 x_kw_th = [100, 200, 300, 500, 800, 1000, 1200, 1500]
 y_capex_th = [30000, 56000, 78000, 120000, 176000, 200000, 216000, 240000]
 x_kw_el = [50, 100, 150, 200, 500]
 y_capex_el = [394875, 526500, 745875, 899437.5, 1755000]
 
-st.title("⚡ ELECTRA ENERGY RECOVERY HEAT")
+st.title("🔥 GENERICO CALCOLATORE RECUPERO ENERGIA DAI FUMI A CAMINO")
 
 if 'gas_price' not in st.session_state: st.session_state.gas_price = 0.50
 if 'ee_price' not in st.session_state: st.session_state.ee_price = 0.22
 
-# Sidebar
-st.sidebar.header("Parametri di Progetto")
+# --- SIDEBAR ---
+st.sidebar.header("Parametri Tecnici")
 portata_kgh = st.sidebar.number_input("Portata fumi (kg/h)", value=5000)
 t_in = st.sidebar.number_input("T. Ingresso fumi (°C)", value=180, max_value=1000)
 modalita = st.sidebar.radio("Tipo Recupero:", ["Non Condensazione", "Condensazione"])
+
+# NUOVO: Selezione ore anno
+ore_anno = st.sidebar.select_slider(
+    "Ore di funzionamento annue:",
+    options=[2000, 4000, 6000, 8000],
+    value=4000
+)
+
 t_out = 55 if modalita == "Condensazione" else 130
 cost_multiplier = 1.30 if modalita == "Condensazione" else 1.00
 
@@ -32,74 +41,62 @@ if st.sidebar.button("🔄 Aggiorna Prezzi (Marzo 2026)"):
     st.session_state.gas_price, st.session_state.ee_price = 0.520, 0.150
     st.rerun()
 
-# Calcoli Fisici
+# --- CALCOLI ---
 p_termica_kw = (portata_kgh * 1.05 * (t_in - t_out)) / 3600
-ore_anno = 4000
 
-# UI Logica
 if p_termica_kw > 550:
     opzione = st.radio("Scegli applicazione:", ["Recupero Termico", "Cogenerazione"])
 else:
     st.error(f"Soglia Cogenerazione non raggiunta: {p_termica_kw:.1f} kW < 550 kW")
     opzione = "Recupero Termico"
 
-# Logica Economica e Ambientale
 if opzione == "Recupero Termico":
     smc_risparmiati = (p_termica_kw * ore_anno / 10.7 / 0.9)
     risparmio_annuo = smc_risparmiati * gas_p
-    co2_risparmiata = (smc_risparmiati * 1.96) / 1000 # 1.96 kg CO2/Smc
+    co2_ton = (smc_risparmiati * 1.96) / 1000 #
     capex = np.interp(p_termica_kw, x_kw_th, y_capex_th) * cost_multiplier
 else:
     kwh_el = (p_termica_kw * 0.10 * ore_anno)
     risparmio_annuo = kwh_el * ee_p
-    co2_risparmiata = (kwh_el * 0.30) / 1000 # 0.30 kg CO2/kWh rete 2026
+    co2_ton = (kwh_el * 0.30) / 1000
     capex = np.interp(p_termica_kw * 0.10, x_kw_el, y_capex_el)
 
 pbt = (capex * 0.35) / risparmio_annuo if risparmio_annuo > 0 else 0
 
-# Visualizzazione
+# --- VISUALIZZAZIONE ---
 st.divider()
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Potenza", f"{p_termica_kw:.1f} kW")
-c2.metric("CAPEX Netto", f"€ {capex*0.35:,.0f}")
-c3.metric("Risparmio", f"€ {risparmio_annuo:,.0f}/y")
-c4.metric("CO2 Risparmiata", f"{co2_risparmiata:.1f} t/anno")
+c2.metric("CAPEX Netto (35%)", f"€ {capex*0.35:,.0f}")
+c3.metric("Risparmio Annuo", f"€ {risparmio_annuo:,.0f}")
+c4.metric("CO2 Risparmiata", f"{co2_ton:.1f} t/anno")
 
-# --- LOGICA COLORE E ICONA DINAMICA ---
+# Logica Colore Dinamica
 if pbt <= 2:
-    colore_pbt = "#28a745"  # Verde successo
-    messaggio = "🔥 Investimento eccezionale! Rientro rapidissimo."
-    icona = "🚀"
+    colore, messaggio, icona = "#28a745", "🔥 Investimento eccezionale! Rientro rapidissimo.", "🚀"
 elif pbt <= 5:
-    colore_pbt = "#ff8c00"  # Arancione
-    messaggio = "⚖️ Buon investimento. Analisi finanziaria solida."
-    icona = "📈"
+    colore, messaggio, icona = "#ff8c00", "⚖️ Buon investimento. Analisi finanziaria solida.", "📈"
 else:
-    colore_pbt = "#dc3545"  # Rosso
-    messaggio = "⚠️ Rientro a lungo termine. Valutare ottimizzazioni."
-    icona = "🧐"
+    colore, messaggio, icona = "#dc3545", "⚠️ Rientro a lungo termine. Valutare ottimizzazioni.", "🧐"
 
-# Sostituisci la vecchia st.info con questo:
 st.markdown(f"""
-    <div style="
-        background-color: {colore_pbt}; 
-        padding: 30px; 
-        border-radius: 15px; 
-        text-align: center; 
-        border: 3px solid white;
-        box-shadow: 0px 4px 15px rgba(0,0,0,0.2);
-        margin-top: 20px;
-        margin-bottom: 20px;
-    ">
-        <h2 style="color: white; margin: 0; font-family: sans-serif; font-weight: 800; font-size: 2.2em;">
-            {icona} Tempo di rientro stimato (PBT): {pbt:.1f} anni
+    <div style="background-color: {colore}; padding: 30px; border-radius: 15px; text-align: center; border: 3px solid white; box-shadow: 0px 4px 15px rgba(0,0,0,0.2); margin: 20px 0;">
+        <h2 style="color: white; margin: 0; font-weight: 800; font-size: 2.2em;">
+            {icona} PBT stimato: {pbt:.1f} anni
         </h2>
-        <p style="color: white; font-size: 1.3em; margin-top: 10px; opacity: 0.9;">
-            Considerando l'accesso agli incentivi del <b>65% (Conto Termico 3.0)</b>
-        </p>
+        <p style="color: white; font-size: 1.2em; opacity: 0.9;">Incentivo 65% Conto Termico 3.0 incluso</p>
         <hr style="border-top: 1px solid rgba(255,255,255,0.3);">
         <h3 style="color: white; font-style: italic;">{messaggio}</h3>
     </div>
 """, unsafe_allow_html=True)
 
-# --- SEGUE IL MODULO CONTATTI (ST.FORM) ---
+# --- FORM CONTATTI PER SALES3 ---
+st.divider()
+st.subheader("📩 Ricevi il Report Completo")
+with st.form("contact_form"):
+    col_a, col_b = st.columns(2)
+    azienda = col_a.text_input("Nome Azienda")
+    email = col_b.text_input("Tua Email")
+    submit = st.form_submit_button("Invia Richiesta a sales3@avogadroenergy.com")
+    if submit and azienda and email:
+        st.success(f"Grazie {azienda}! Il report è in fase di elaborazione.")

@@ -2,84 +2,67 @@ import streamlit as st
 import psychrolib
 import numpy as np
 
-# Inizializzazione Psychrolib
 psychrolib.SetUnitSystem(psychrolib.SI)
+st.set_page_config(page_title="ELECTRA ENERGY RECOVERY HEAT", page_icon="⚡", layout="wide")
 
-st.set_page_config(page_title="Avogadro Pro - Energy & ROI", page_icon="📈")
-
-# --- DATABASE COSTI (Dalle tue tabelle) ---
+# Database Costi
 x_kw_th = [100, 200, 300, 500, 800, 1000, 1200, 1500]
 y_capex_th = [30000, 56000, 78000, 120000, 176000, 200000, 216000, 240000]
-
 x_kw_el = [50, 100, 150, 200, 500]
 y_capex_el = [394875, 526500, 745875, 899437.5, 1755000]
 
-st.title("🚀 Avogadro Energy: ROI & Recovery Tool")
+st.title("⚡ ELECTRA ENERGY RECOVERY HEAT")
 
-# --- INPUT SIDEBAR ---
-st.sidebar.header("Dati Tecnici")
+if 'gas_price' not in st.session_state: st.session_state.gas_price = 0.50
+if 'ee_price' not in st.session_state: st.session_state.ee_price = 0.22
+
+# Sidebar
+st.sidebar.header("Parametri di Progetto")
 portata_kgh = st.sidebar.number_input("Portata fumi (kg/h)", value=5000)
-t_in = st.sidebar.number_input("T. Ingresso fumi (°C)", value=180)
-t_out = st.sidebar.number_input("T. Uscita fumi (°C)", value=60)
-ore_anno = st.sidebar.slider("Ore funzionamento annue", 1000, 8760, 4000)
+t_in = st.sidebar.number_input("T. Ingresso fumi (°C)", value=180, max_value=1000)
+modalita = st.sidebar.radio("Tipo Recupero:", ["Non Condensazione", "Condensazione"])
+t_out = 55 if modalita == "Condensazione" else 130
+cost_multiplier = 1.30 if modalita == "Condensazione" else 1.00
 
 st.sidebar.header("Parametri Economici")
-costo_gas = st.sidebar.number_input("Costo Gas (€/Smc)", value=0.50)
-costo_ee = st.sidebar.number_input("Costo Elettricità (€/kWh)", value=0.22)
+gas_p = st.sidebar.number_input("Gas (€/Smc)", value=st.session_state.gas_price, format="%.3f")
+ee_p = st.sidebar.number_input("Elettricità (€/kWh)", value=st.session_state.ee_price, format="%.3f")
 
-# --- CALCOLI FISICI ---
-cp_fumi = 1.05 
-p_termica_kw = (portata_kgh * cp_fumi * (t_in - t_out)) / 3600
+if st.sidebar.button("🔄 Aggiorna Prezzi (Marzo 2026)"):
+    st.session_state.gas_price, st.session_state.ee_price = 0.520, 0.150
+    st.rerun()
 
-# --- SELEZIONE MODALITÀ ---
-st.subheader("Configurazione Impianto")
-opzione = "Solo Calore"
+# Calcoli Fisici
+p_termica_kw = (portata_kgh * 1.05 * (t_in - t_out)) / 3600
+ore_anno = 4000
+
+# UI Logica
 if p_termica_kw > 550:
-    opzione = st.radio("Seleziona tipo di recupero:", ["Solo Calore (Gas Saving)", "Cogenerazione (Power Generation)"])
+    opzione = st.radio("Scegli applicazione:", ["Recupero Termico", "Cogenerazione"])
 else:
-    st.info(f"Potenza termica ({p_termica_kw:.1f} kW) inferiore a 550 kW. Opzione Cogenerazione non disponibile.")
+    st.error(f"Soglia Cogenerazione non raggiunta: {p_termica_kw:.1f} kW < 550 kW")
+    opzione = "Recupero Termico"
 
-# --- LOGICA ECONOMICA ---
-if opzione == "Solo Calore (Gas Saving)" or opzione == "Solo Calore":
-    # Risparmio Gas: 1 Smc ≈ 10.7 kWh. Efficienza caldaia media 90%
-    risparmio_annuo = (p_termica_kw * ore_anno / 10.7 / 0.9) * costo_gas
-    capex = np.interp(p_termica_kw, x_kw_th, y_capex_th)
-    label_risparmio = "Risparmio Gas Annuo"
+# Logica Economica e Ambientale
+if opzione == "Recupero Termico":
+    smc_risparmiati = (p_termica_kw * ore_anno / 10.7 / 0.9)
+    risparmio_annuo = smc_risparmiati * gas_p
+    co2_risparmiata = (smc_risparmiati * 1.96) / 1000 # 1.96 kg CO2/Smc
+    capex = np.interp(p_termica_kw, x_kw_th, y_capex_th) * cost_multiplier
 else:
-    # Cogenerazione: Elettricità prodotta (10% di P. Termica)
-    p_elettrica_kw = p_termica_kw * 0.10
-    risparmio_annuo = (p_elettrica_kw * ore_anno) * costo_ee
-    capex = np.interp(p_elettrica_kw, x_kw_el, y_capex_el)
-    label_risparmio = "Risparmio Elettrico Annuo"
+    kwh_el = (p_termica_kw * 0.10 * ore_anno)
+    risparmio_annuo = kwh_el * ee_p
+    co2_risparmiata = (kwh_el * 0.30) / 1000 # 0.30 kg CO2/kWh rete 2026
+    capex = np.interp(p_termica_kw * 0.10, x_kw_el, y_capex_el)
 
-# --- INCENTIVI ---
-st.subheader("Analisi Finanziaria")
-incentivo_tipo = st.selectbox("Seleziona Incentivo:", ["Nessuno", "Conto Termico 3.0 (65%)", "Transizione 4.0 (20%)", "Fondi INAIL (40%)"])
+pbt = (capex * 0.35) / risparmio_annuo if risparmio_annuo > 0 else 0
 
-percentuale = 0
-if "65%" in incentivo_tipo: percentuale = 0.65
-elif "20%" in incentivo_tipo: percentuale = 0.20
-elif "40%" in incentivo_tipo: percentuale = 0.40
+# Visualizzazione
+st.divider()
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("Potenza", f"{p_termica_kw:.1f} kW")
+c2.metric("CAPEX Netto", f"€ {capex*0.35:,.0f}")
+c3.metric("Risparmio", f"€ {risparmio_annuo:,.0f}/y")
+c4.metric("CO2 Risparmiata", f"{co2_risparmiata:.1f} t/anno")
 
-capex_netto = capex * (1 - percentuale)
-pbt = capex_netto / risparmio_annuo if risparmio_annuo > 0 else 0
-
-# --- DISPLAY RISULTATI ---
-c1, c2, c3 = st.columns(3)
-c1.metric("CAPEX Stimato", f"€ {capex:,.0f}")
-c2.metric(label_risparmio, f"€ {risparmio_annuo:,.0f}")
-c3.metric("PBT (Payback)", f"{pbt:.1f} Anni")
-
-if pbt < 3:
-    st.success("🔥 Investimento altamente consigliato! Rientro rapido.")
-elif pbt < 6:
-    st.warning("⚖️ Investimento equilibrato. Valutare incentivi extra.")
-else:
-    st.error("📉 Rientro lungo. Verificare i costi operativi.")
-
-# --- FORMULE ---
-with st.expander("Vedi Formule di Calcolo"):
-    st.write("Potenza Termica Recuperata:")
-    st.latex(r"P_{th} = \frac{\dot{m} \cdot c_p \cdot \Delta T}{3600}")
-    st.write("Payback Time (PBT):")
-    st.latex(r"PBT = \frac{CAPEX \cdot (1 - \%Incentivo)}{Risparmio_{Annuo}}")
+st.info(f"Tempo di rientro stimato (PBT): **{pbt:.1f} anni** considerando incentivo 65%.")

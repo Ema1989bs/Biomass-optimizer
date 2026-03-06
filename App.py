@@ -65,4 +65,41 @@ c2.metric("CAPEX Netto", f"€ {capex*0.35:,.0f}")
 c3.metric("Risparmio", f"€ {risparmio_annuo:,.0f}/y")
 c4.metric("CO2 Risparmiata", f"{co2_risparmiata:.1f} t/anno")
 
-st.info(f"Tempo di rientro stimato (PBT): **{pbt:.1f} anni** considerando incentivo 65%.")
+# --- LOGICA COLORE E ICONA DINAMICA ---
+if pbt <= 2:
+    colore_pbt = "#28a745"  # Verde successo
+    messaggio = "🔥 Investimento eccezionale! Rientro rapidissimo."
+    icona = "🚀"
+elif pbt <= 5:
+    colore_pbt = "#ff8c00"  # Arancione
+    messaggio = "⚖️ Buon investimento. Analisi finanziaria solida."
+    icona = "📈"
+else:
+    colore_pbt = "#dc3545"  # Rosso
+    messaggio = "⚠️ Rientro a lungo termine. Valutare ottimizzazioni."
+    icona = "🧐"
+
+# Sostituisci la vecchia st.info con questo:
+st.markdown(f"""
+    <div style="
+        background-color: {colore_pbt}; 
+        padding: 30px; 
+        border-radius: 15px; 
+        text-align: center; 
+        border: 3px solid white;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.2);
+        margin-top: 20px;
+        margin-bottom: 20px;
+    ">
+        <h2 style="color: white; margin: 0; font-family: sans-serif; font-weight: 800; font-size: 2.2em;">
+            {icona} Tempo di rientro stimato (PBT): {pbt:.1f} anni
+        </h2>
+        <p style="color: white; font-size: 1.3em; margin-top: 10px; opacity: 0.9;">
+            Considerando l'accesso agli incentivi del <b>65% (Conto Termico 3.0)</b>
+        </p>
+        <hr style="border-top: 1px solid rgba(255,255,255,0.3);">
+        <h3 style="color: white; font-style: italic;">{messaggio}</h3>
+    </div>
+""", unsafe_allow_html=True)
+
+# --- SEGUE IL MODULO CONTATTI (ST.FORM) ---

@@ -4,7 +4,7 @@ import numpy as np
 
 # Configurazione Iniziale
 psychrolib.SetUnitSystem(psychrolib.SI)
-st.set_page_config(page_title="GENERICO CALCOLATORE RECUPERO ENERGIA DAI FUMI A CAMINO", page_icon="🔥", layout="wide")
+st.set_page_config(page_title="CALCOLATORE RECUPERO ENERGIA DAI FUMI A CAMINO", page_icon="🔥", layout="wide")
 
 # Database CAPEX basato sulle tue tabelle
 x_kw_th = [100, 200, 300, 500, 800, 1000, 1200, 1500]
@@ -12,7 +12,7 @@ y_capex_th = [30000, 56000, 78000, 120000, 176000, 200000, 216000, 240000]
 x_kw_el = [50, 100, 150, 200, 500]
 y_capex_el = [394875, 526500, 745875, 899437.5, 1755000]
 
-st.title("🔥 GENERICO CALCOLATORE RECUPERO ENERGIA DAI FUMI A CAMINO")
+st.title("CALCOLATORE RECUPERO ENERGIA DAI FUMI A CAMINO")
 st.write("Analisi tecnica ed economica immediata per impianti Avogadro Energy")
 
 # --- ZONA INPUT CENTRALE (VISIBILE SUBITO SUL SITO) ---

@@ -89,6 +89,4 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# --- FORM CONTATTI PER LEAD GENERATION ---
-st.divider()
-st.subheader("📩Contattaci e Ricevi il Report e preventivo Completo")
+

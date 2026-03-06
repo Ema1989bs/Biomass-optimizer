@@ -79,14 +79,12 @@ else:
     colore, messaggio, icona = "#dc3545", "⚠️ Rientro a lungo termine. Valutare ottimizzazioni.", "🧐"
 
 st.markdown(f"""
-   <div style="width: 100%; overflow: hidden; margin-top: 20px;">
-    <iframe 
-        src="https://biomass-optimizer-fe8camyii3qqyb29z2bqnv.streamlit.app/?embed=true" 
-        style="width: 100%; height: 1100px; border: none;"
-        scrolling="no"
-        allowfullscreen>
-    </iframe>
-</div>
+    <div style="background-color: {colore}; padding: 30px; border-radius: 15px; text-align: center; border: 3px solid white; box-shadow: 0px 4px 15px rgba(0,0,0,0.2); margin: 20px 0;">
+        <h2 style="color: white; margin: 0; font-weight: 800; font-size: 2.2em;">
+            {icona} PBT stimato: {pbt:.1f} anni
+        </h2>
+        <p style="color: white; font-size: 1.2em; opacity: 0.9;">Incentivo 65% Conto Termico 3.0 incluso</p>
+        <hr style="border-top: 1px solid rgba(255,255,255,0.3);">
+        <h3 style="color: white; font-style: italic;">{messaggio}</h3>
+    </div>
 """, unsafe_allow_html=True)
-
-

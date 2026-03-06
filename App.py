@@ -108,6 +108,6 @@ if opzione == "Cogenerazione":
     st.markdown(f"""
         <div style="background-color: #007bff; padding: 20px; border-radius: 15px; text-align: center; border: 3px solid white; margin-top: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.1);">
             <h3 style="color: white; margin: 0; font-size: 1.5em;">🥈 PBT Alternativo: {pbt_tee:.1f} anni</h3>
-            <p style="color: white; opacity: 0.9; margin: 0;">Incentivo Certificati Bianchi (TEE) stimato</p>
+            <p style="color: white; opacity: 0.9; margin: 0;">Calcolato includendo anche i Certificati Bianchi (TEE)</p>
         </div>
     """, unsafe_allow_html=True)

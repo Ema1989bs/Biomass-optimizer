@@ -52,18 +52,19 @@ else:
 if opzione == "Recupero Termico":
     smc_risparmiati = (p_termica_kw * ore_anno / 10.7 / 0.9)
     risparmio_annuo = smc_risparmiati * gas_p
-    # Calcolo TEE
-guadagno_tee = ((p_termica_kw * ore_anno / 1000) / 11.63) * 0.8 * 250
-pbt = (capex * 0.35) / (risparmio_annuo + guadagno_tee) if (risparmio_annuo + guadagno_tee) > 0 else 0
     co2_ton = (smc_risparmiati * 1.96) / 1000 
+    # Calcolo TEE (Incentivo Certificati Bianchi)
+    guadagno_tee = ((p_termica_kw * ore_anno / 1000) / 11.63) * 0.8 * 250
     capex = np.interp(p_termica_kw, x_kw_th, y_capex_th) * cost_multiplier
 else:
     kwh_el = (p_termica_kw * 0.10 * ore_anno)
     risparmio_annuo = kwh_el * ee_p
     co2_ton = (kwh_el * 0.30) / 1000
+    guadagno_tee = 0 # Tipicamente non applicabili in cogenerazione semplice qui
     capex = np.interp(p_termica_kw * 0.10, x_kw_el, y_capex_el)
 
-pbt = (capex * 0.35) / risparmio_annuo if risparmio_annuo > 0 else 0
+# Calcolo PBT finale includendo Risparmio Gas + Guadagno TEE
+pbt = (capex * 0.35) / (risparmio_annuo + guadagno_tee) if (risparmio_annuo + guadagno_tee) > 0 else 0
 
 # --- VISUALIZZAZIONE RISULTATI ---
 st.divider()
@@ -71,7 +72,7 @@ c1, c2, c3, c4 = st.columns(4)
 c1.metric("Potenza Recuperata", f"{p_termica_kw:.1f} kW")
 c2.metric("CAPEX Netto (35%)", f"€ {capex*0.35:,.0f}")
 c3.metric("Guadagno TEE", f"€ {guadagno_tee:,.0f}/anno", help="Certificati Bianchi stimati (250€/TEE)")
-c4.metric("Risparmio Totale", f"€ {(risparmio_annuo + guadagno_tee):,.0f}/y").1f} t/anno")
+c4.metric("Risparmio Totale", f"€ {(risparmio_annuo + guadagno_tee):,.0f}/y")
 
 # Logica Colore Dinamica PBT
 if pbt <= 2:

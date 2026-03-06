@@ -92,11 +92,4 @@ st.markdown(f"""
 
 # --- FORM CONTATTI PER SALES3 ---
 st.divider()
-st.subheader("📩 Ricevi il Report Completo")
-with st.form("contact_form"):
-    col_a, col_b = st.columns(2)
-    azienda = col_a.text_input("Nome Azienda")
-    email = col_b.text_input("Tua Email")
-    submit = st.form_submit_button("Invia Richiesta a sales3@avogadroenergy.com")
-    if submit and azienda and email:
-        st.success(f"Grazie {azienda}! Il report è in fase di elaborazione.")
+st.subheader("📩 Contattaci per un Report e preventivo Completo")
